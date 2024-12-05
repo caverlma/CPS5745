@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="project1.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+  <script src="https://www.gstatic.com/charts/loader.js"></script>
+  <script defer src="scripts.js"></script>
+
+  <title>Max Caverly ~ [CPS*5745*02] Project 1</title>
+</head>
+<body style="background-color:#333; color: #fff;">
+
+  <h1 style = "text-align: center;">[CPS*5745*02] Project 1 ~ Max Caverly</h1>
+
+<div class="navbar">
+  <div class="dropdown">
+    <button class="dropbtn">File
+      <i class="fa fa-caret-down"></i>
+    </button>
+    <div class="dropdown-content">
+      <a href="#" id="myBtn" class="open-modal">Login to Database</a>
+      <a onclick = "LoadTable()">Load Homerun Data</a>
+      <a onclick = "LoadTable2()">Load Stock_Prices Data</a>
+      <a onclick = "LogoutDB()">Logout DB</a>
+      <a onclick = "ExitPage()">Exit</a>
+    </div>
+  </div> 
+
+  <div class="dropdown">
+    <button class="dropbtn">View
+      <i class="fa fa-caret-down"></i>
+    </button>
+    <div class="dropdown-content">
+      <a onclick="BarChartRadio()">Bar Chart</a>
+      <a onclick="LineChartRadio()">Line Chart</a>
+    </div>
+  </div> 
+  
+  <div class="dropdown">
+    <button class="dropbtn">Help
+      <i class="fa fa-caret-down"></i>
+    </button>
+    <div class="dropdown-content">
+      <a href="#" id="loginInfo">Login Info</a>
+      <a href="#" id="devInfo">Developer Info</a>
+      <a href="#" id="clientInfo">Client Info</a>
+      <a href="https://docs.google.com/document/d/1KtSpKcuMK60KBudkuhekcpySRJO6EA3cP1CV7sBuwJ4/edit?usp=sharing" target="_blank" id="Help">Help</a>
+    </div>
+  </div> 
+</div>
+
+<div id = "data" style="width: 50%; float:left; background-color: white; color: black; text-align: center;">
+  <h2>Data Selection</h2>
+  <div id = "selection_div"></div>
+  <div id = "selection2_div"></div>
+</div>
+
+<div style="width: 50%; float:right; background-color: white; color: black; text-align: center;">
+  <h2>Message Area</h2>
+  <div id = "message_div"></div>
+</div>
+<div style="clear: both;"></div>
+<div id = "graph" style="width: 100%; float: center; background-color: white; color: black; text-align: center;">
+  <h2>Graph View</h2>
+  <div id = "graph_div"></div>
+</div>
+
+<div style="width: 100%; float: center; background-color: white; color: black; text-align: center;">
+  <h2>Table View</h2>
+  <div id = "table_message"></div>
+  <div id="table_div"></div>
+</div>
+
+
+<!-- The Modal -->
+<div id="myModal" class="modal" style = "display: none; color: black;">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <p>Login ID: <input type = "text" id = "THEusername" required>
+      <br>Password: <input type = "password" id = "THEpassword" required>
+      <br><br><input type = "submit" value = "Login" onclick = "LoginDB()" data-bs-dismiss="modal">
+    </p>
+  </div>
+
+</div>
+
+</body>
+</html>

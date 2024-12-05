@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+        <script src="https://www.gstatic.com/charts/loader.js"></script> 
+
+        <script>
+            function ShowGraph(str) {
+            if (str == "") {
+                document.getElementById("message").innerHTML = "";
+                document.getElementById("graph").innerHTML = "";
+                return;
+            } else {
+                var xmlhttp = new XMLHttpRequest();
+                xmlhttp.onreadystatechange = function() {
+                    if (this.readyState == 4 && this.status == 200) {
+                        let arrayText = this.responseText.split('/');
+                        const dataArray = [['Team', 'Home Runs']];
+                        for (let item of arrayText) {
+                            const parts = item.split(',');
+                            if (parts.length === 2) {
+                                const team = parts[0];
+                                const homeRuns = parseInt(parts[1], 10);
+                                dataArray.push([team, homeRuns]);
+                            }
+                        }
+                        if (dataArray[1][1]){drawChart(dataArray);}
+                        else{document.getElementById("graph").innerHTML = this.responseText}
+                    }
+                };
+                xmlhttp.open("GET","study1.php?q="+str,true);
+                xmlhttp.send();
+            }
+            }
+        </script>
+
+        <script>
+            google.charts.load('current',{packages:['corechart']});
+            google.charts.setOnLoadCallback(drawChart);
+            
+            function drawChart(dataArray) {
+                const data = google.visualization.arrayToDataTable(dataArray);
+                const options = {title: 'Homeruns By Team'};
+                const chart = new google.visualization.ColumnChart(document.getElementById('graph'));
+                chart.draw(data, options);
+            }
+        </script> 
+        
+    </head>
+    <body>
+
+        <label for="options">Select an option:</label>
+        <select name = "options" id = "options" onchange = "ShowGraph(this.value)">
+            <option value = "" default>Select</option>
+            <option value = "1">Good</option>
+            <option value = "2">Bad</option>
+        </select>
+        <div id = "message"></div>
+        <div id = "graph" style="max-width:95%; height:400px"></div>
+    </body>
+</html>
