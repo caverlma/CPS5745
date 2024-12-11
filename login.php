@@ -3,7 +3,14 @@
                 include "dbconfig.php";
                 
                 if (isset($_SESSION['user'])) {
-                    echo json_encode(['status' => 'already_logged_in', 'message' => 'You are already logged in as ' . $_SESSION['user']['name'] . '.', 'name' => $_SESSION['user']['name'], 'uid' => $_SESSION['user']['uid'], 'login' => $_SESSION['user']['login'], 'gender' => $_SESSION['user']['gender']]);
+                    $con = mysqli_connect($server,$login,$password,$dbname);
+                    if (!$con) {die("Connection failed: " . mysqli_connect_error());}
+
+                    $sql = "SELECT * FROM DV_User WHERE login = '" . $_SESSION['user']['login'] . "'";
+                    $result = mysqli_query($con, $sql);
+                    $row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+
+                    echo json_encode(['status' => 'already_logged_in', 'message' => 'Welcome back, ' . $_SESSION['user']['name'] . '!', 'name' => $_SESSION['user']['name'], 'uid' => $_SESSION['user']['uid'], 'login' => $_SESSION['user']['login'], 'gender' => $_SESSION['user']['gender']]);
                     exit();
                 }
 

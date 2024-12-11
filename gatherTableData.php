@@ -1,10 +1,14 @@
 <?php
 include 'dbconfig.php';
 
+header('Content-Type: application/json');
+
 $con = mysqli_connect($server,$login,$password,$dbname);
 if (!$con) {die("Connection failed: " . mysqli_connect_error());}
 
-$sql = "SELECT * FROM Homeruns";
+if (!isset($_POST['team']) || $_POST['team'] == "ALL") {$sql = "SELECT * FROM Homeruns";}
+else {$sql = "SELECT * FROM Homeruns WHERE Batter_Team = '" . $_POST['team'] . "'";}
+
 $result = mysqli_query($con,$sql);
 
 if(mysqli_num_rows($result) > 0){

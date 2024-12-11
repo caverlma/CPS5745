@@ -1,76 +1,171 @@
-function drawHomerunTable(homeruns) {
-    google.charts.load('current', {'packages': ['table']});
-    google.charts.setOnLoadCallback(function() {
-        const googleData = new google.visualization.DataTable();
-        googleData.addColumn('number', 'Record_ID');
-        googleData.addColumn('string', 'Game_Date');
-        googleData.addColumn('string', 'Batter');
-        googleData.addColumn('string', 'Batter_Team');
-        googleData.addColumn('string', 'Pitcher');
-        googleData.addColumn('string', 'Pitcher_Team');
-        googleData.addColumn('number', 'Inning');
-        googleData.addColumn('number', 'Distance');
-        googleData.addColumn('number', 'Exit_Velocity');
-        googleData.addColumn('number', 'Elevation_Angle');
-        googleData.addColumn('number', 'Horizontal_Angle');
-        googleData.addColumn('number', 'Apex');
-        googleData.addColumn('string', 'Ballpark');
-        
-        homeruns.forEach(hr => {
-            googleData.addRow([
-                hr.Record_ID,
-                hr.Game_Date,
-                hr.Batter,
-                hr.Batter_Team,
-                hr.Pitcher,
-                hr.Pitcher_Team,
-                hr.Inning,
-                hr.Distance,
-                hr.Exit_Velocity,
-                hr.Elevation_Angle,
-                hr.Horizontal_Angle, 
-                hr.Apex,
-                hr.Ballpark
-            ]);
-        });
+let thresholds = [];
+function drawHomerunTable(homeruns, pageSize = 20) {
+  const tableDiv = document.getElementById('table_div');
+  tableDiv.innerHTML = '';
 
-        const table = new google.visualization.Table(document.getElementById('table_div'));
-        table.draw(googleData, {
-            showRowNumber: true,
-            width: '100%',
-            height: 'auto',
-            page: 'enable',
-            pageSize: 20
-        });
-    });
+  const table = document.createElement('table');
+  table.id = 'dataTable';
+  table.classList.add('display');
+  table.style.width = '100%';
+  tableDiv.appendChild(table);
+
+  const headers = [
+      { display: 'Record ID', key: 'Record_ID' },
+      { display: 'Game Date', key: 'Game_Date' },
+      { display: 'Batter', key: 'Batter' },
+      { display: 'Batting Team', key: 'Batter_Team' },
+      { display: 'Pitcher', key: 'Pitcher' },
+      { display: 'Pitching Team', key: 'Pitcher_Team' },
+      { display: 'Inning', key: 'Inning' },
+      { display: 'Distance', key: 'Distance' },
+      { display: 'Exit Velocity', key: 'Exit_Velocity' },
+      { display: 'Elevation Angle', key: 'Elevation_Angle' },
+      { display: 'Horizontal Angle', key: 'Horizontal_Angle' },
+      { display: 'Apex', key: 'Apex' },
+      { display: 'Ballpark', key: 'Ballpark' }
+  ];
+
+  const AllHomeruns = homeruns.map(hr => hr.Distance);
+  const sortedDistances = AllHomeruns.sort((a, b) => a - b);
+  const q1 = sortedDistances[Math.floor((sortedDistances.length / 4))];
+  const q3 = sortedDistances[Math.floor((sortedDistances.length * 3) / 4)];
+  thresholds = [q1, q3];
+
+  $('#dataTable').DataTable({
+      destroy: true,
+      data: homeruns,
+      columns: headers.map(header => ({
+          title: header.display,
+          data: header.key
+      })),
+      rowCallback: function (row, data) {
+              if (data.Distance < thresholds[0] || data.Distance > thresholds[1]) {
+                  $(row).css('background-color', '#ffff71');
+                  $(row).css('color', '#8b0000');
+              }
+      },
+      deferRender: true,
+      pageLength: pageSize,
+      responsive: true,
+      dom: 'Bfrtip',
+      buttons: ['copy', 'csv', 'excel', 'pdf'],
+      paging: true,
+      lengthChange: true,
+      searching: true,
+      order: [[0, 'asc']]
+  });
 }
 
-function drawPerTeamTable(teams) {
-    google.charts.load("current", {packages:['corechart']});
-    google.charts.setOnLoadCallback(function() {
-        const googleData = new google.visualization.DataTable();
-        googleData.addColumn('string', 'Batter_Team');
-        googleData.addColumn('number', 'Homerun_Count');
+function drawStockPricesTable(stockPrices, pageSize = 20) {
+  console.log("Rendering Stock Prices DataTable with page size:", pageSize);
 
-        teams.forEach(tms => {
-            googleData.addRow([
-                tms.Batter_Team,
-                tms.Homerun_Count
-            ]);
-        });
+  const tableDiv = document.getElementById('table_div');
+  tableDiv.innerHTML = '';
 
-        // Define and draw the chart
-        const options = {
-            title: 'Homeruns By Team',
-            width: '100%',
-            height: 'auto',
-            legend: { position: 'none' }
-        };
-        document.getElementById("graph_div").innerHTML = "";
-        const chart = new google.visualization.ColumnChart(document.getElementById('graph_div'));
-        chart.draw(googleData, options);
-    });
+  // Create table
+  const table = document.createElement('table');
+  table.id = 'dataTable';
+  table.classList.add('display');
+  table.style.width = '100%';
+  tableDiv.appendChild(table);
+
+  const headers = [
+      { display: 'ID', key: 'id' },
+      { display: 'Symbol', key: 'symbol' },
+      { display: 'Date', key: 'date' },
+      { display: 'Open', key: 'open' },
+      { display: 'High', key: 'high' },
+      { display: 'Low', key: 'low' },
+      { display: 'Close', key: 'close' },
+      { display: 'Volume', key: 'volume' },
+      { display: 'Adjusted Close', key: 'adj_close' }
+  ];
+
+  // Step 1: Group percent changes by stock symbol
+  const percentChangesBySymbol = {};
+  stockPrices.forEach(stock => {
+      if (stock.open > 0) { // Avoid division by zero
+          const percentChange = Math.abs((stock.close - stock.open) / stock.open) * 100;
+          if (!percentChangesBySymbol[stock.symbol]) {
+              percentChangesBySymbol[stock.symbol] = [];
+          }
+          percentChangesBySymbol[stock.symbol].push(percentChange);
+      }
+  });
+
+  // Step 2: Calculate IQR and outlier threshold for each stock symbol
+  thresholdsBySymbol = {}; // Update the global variable
+  for (const [symbol, percentChanges] of Object.entries(percentChangesBySymbol)) {
+      const sortedChanges = percentChanges.sort((a, b) => a - b);
+      const q1 = sortedChanges[Math.floor((sortedChanges.length / 4))];
+      const q3 = sortedChanges[Math.floor((sortedChanges.length * 3) / 4)];
+      const iqr = q3 - q1;
+      const outlierThreshold = q3 + 1.5 * iqr;
+      thresholdsBySymbol[symbol] = outlierThreshold;
+  }
+
+  console.log('Outlier thresholds by symbol:', thresholdsBySymbol);
+
+  // Step 3: Highlight rows with percent changes > outlierThreshold for the specific stock symbol
+  $('#dataTable').DataTable({
+      destroy: true,
+      data: stockPrices,
+      columns: headers.map(header => ({
+          title: header.display,
+          data: header.key
+      })),
+      rowCallback: function (row, data) {
+          if (data.open > 0) { // Avoid division by zero
+              const percentChange = Math.abs((data.close - data.open) / data.open) * 100;
+              const threshold = thresholdsBySymbol[data.symbol];
+              if (percentChange > threshold) {
+                  // Add custom styling for outlier rows
+                  $(row).css('background-color', '#ffff71');  // Light yellow background
+                  $(row).css('color', '#8b0000');             // Dark red text
+              }
+          }
+      },
+      deferRender: true,
+      pageLength: pageSize,
+      responsive: true,
+      dom: 'Bfrtip',
+      buttons: ['copy', 'csv', 'excel', 'pdf'],
+      paging: true,
+      lengthChange: true,
+      searching: true,
+      order: [[0, 'asc']]
+  });
 }
+
+function drawPerTeamTable(response) {
+  google.charts.load("current", {packages:['corechart']});
+  google.charts.setOnLoadCallback(function() {
+      const googleData = new google.visualization.DataTable();
+      googleData.addColumn('string', 'Batter_Team');
+      googleData.addColumn('number', 'Homerun_Count');
+
+      const minYear = response.min_year;
+      const maxYear = response.max_year;
+      response.data.forEach(tms => {
+          googleData.addRow([
+              tms.Batter_Team,
+              tms.Homerun_Count
+          ]);
+      });
+
+      const options = {
+          title: `Homeruns By Team (${minYear} - ${maxYear})`,
+          width: '100%',
+          height: 'auto',
+          legend: { position: 'none' }
+      };
+
+      document.getElementById("graph_div").innerHTML = "";
+      const chart = new google.visualization.ColumnChart(document.getElementById('graph_div'));
+      chart.draw(googleData, options);
+  });
+}
+
 
 function drawPerPlayerTable(players) {
     google.charts.load("current", {packages:['corechart']});
@@ -86,7 +181,6 @@ function drawPerPlayerTable(players) {
             ]);
         });
 
-        // Define and draw the chart
         const options = {
             title: 'Homeruns By Player',
             width: '100%',
@@ -118,6 +212,8 @@ function drawPerYearTable(monthruns) {
             title: 'Homeruns By Team Per Year',
             width: '100%',
             height: 'auto',
+            hAxis: {title: 'Month', minValue: 0, maxValue: 12},
+            vAxis: {title: 'Number of Homeruns'},
             legend: { position: 'none' }
         };
         document.getElementById("graph_div").innerHTML = "";
@@ -152,19 +248,65 @@ function drawPerMonthTable(dayruns) {
     });
 }
 
+function drawCorrelationTable(correlations) {
+  google.charts.load("current", {packages:['corechart']});
+  google.charts.setOnLoadCallback(function() {
+      const googleData = new google.visualization.DataTable();
+      googleData.addColumn('number', 'Exit_Velocity');
+      googleData.addColumn('number', 'Distance');
+      correlations.forEach(cor => {
+          googleData.addRow([
+            cor.Exit_Velocity,
+            cor.Distance
+          ]);
+      });
+
+      // Define and draw the chart
+      const options = {
+          title: 'Exit Velocity vs. Total Distance Traveled',
+          width: '100%',
+          height: 'auto',
+          legend: { position: 'none' },
+          trendlines: { 0: {} }
+      };
+      document.getElementById("graph_div").innerHTML = "";
+      const chart = new google.visualization.ScatterChart(document.getElementById('graph_div'));
+      chart.draw(googleData, options);
+  });
+}
+
 let LoggedIn = false;
 let DataLoaded = false;
 let username = "";
 let password = "";
-let uname = "";
-let ulog = "";
-let uid = "";
-let ugender = "";
+let uname, ulog, uid, ugender;
 $("#loginInfo").on('click', function() {alert("Account Info\n\nName: " + uname + "\nUID: " + uid + "\nLogin: " + ulog + "\nGender: " + ugender);});
 $("#devInfo").on('click', function() {alert("Developer Info\n\nName: Max Caverly\nClass ID: CPS*5745*02\nProject Date (Part 1): 10/23/2024");});
 $("#clientInfo").on('click', function() {alert("Client Info\n\nBrowser: " + navigator.appName + " " + navigator.appVersion + "\nOperating System: " + navigator.platform);});
 
-function LoginDB(){
+window.onload = function() {
+  fetch('login.php', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.status == 'already_logged_in') {
+      LoggedIn = true;
+      document.getElementById("message_div").innerHTML = data.message;
+      uname = data.name;
+      ulog = data.login;
+      uid = data.uid;
+      ugender = data.gender;
+    }
+  });
+};
+
+
+function LoginDB() {
   console.log("You are doing a thing!");
   const username = document.getElementById("THEusername").value;
   const password = document.getElementById("THEpassword").value;
@@ -178,20 +320,24 @@ function LoginDB(){
       },
       body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`
     })
-
-      .then(response => response.json())
-      .then(data => {
-        if (data.status == 'already_logged_in') {LoggedIn = true; alert(data.message);}
-        else if (data.status == 'login_failure') {alert(data.message);}
-        else if (data.status == 'logging_in'){
-          LoggedIn = true;
-          document.getElementById("message_div").innerHTML = data.message;
-          uname = data.name;
-          ulog = data.login;
-          uid = data.uid;
-          ugender = data.gender;
-        }
-      })
+    .then(response => response.json())
+    .then(data => {
+      if (data.status == 'already_logged_in') {
+        LoggedIn = true;
+        alert(data.message);
+      }
+      else if (data.status == 'login_failure') {
+        alert(data.message);
+      }
+      else if (data.status == 'logging_in') {
+        LoggedIn = true;
+        document.getElementById("message_div").innerHTML = data.message;
+        uname = data.name;
+        ulog = data.login;
+        uid = data.uid;
+        ugender = data.gender;
+      }
+    });
   }
 }
 
@@ -201,8 +347,66 @@ function LoadTable(){
     .then(response => response.json())
       .then(data => {
           drawHomerunTable(data);
-          document.getElementById('message_div').innerHTML += '<p>Homeruns table successfully loaded.</p>';
+          document.getElementById('message_div').innerHTML += '<p>Homeruns table successfully loaded. Distance thresholds are (' + thresholds[0] + ', ' + thresholds[1] + ').</p>';
           DataLoaded = true;
+          DataLoaded2 = false;
+
+          document.getElementById("table_message").innerHTML = "";
+          const TableperPlayersOption = document.createElement('select');
+          TableperPlayersOption.id = 'TableperPlayers';
+          TableperPlayersOption.name = 'TabledataOption';
+
+          const options = ["ALL", "ARI", "ATL", "BAL", "BOS", "CHC", "CHW", "CIN", "CLE", "COL", "DET", "FLA", "HOU", "KC", "LAA", "LAD", "MIA", "MIL", "MIN", "NYM", "NYY", "OAK", "PHI", "PIT", "SD", "SEA", "SF", "STL", "TB", "TEX", "TOR", "WSH"];
+          options.forEach(optionValue => {
+              const option = document.createElement('option');
+              option.value = optionValue;
+              option.text = optionValue;
+              TableperPlayersOption.appendChild(option);
+          });
+
+          const TableperPlayersLabel = document.createElement('label');
+          TableperPlayersLabel.htmlFor = 'TableperPlayers';
+          TableperPlayersLabel.innerHTML = 'Select Team: ';
+
+          table_message.appendChild(TableperPlayersLabel);
+          table_message.appendChild(TableperPlayersOption);
+
+          TableperPlayersOption.addEventListener('change', function(){
+            fetch('gatherTableData.php', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: `team=${encodeURIComponent(TableperPlayersOption.value)}`
+          })
+            .then(response => response.json())
+            .then(data => {
+                drawHomerunTable(data);
+            })
+            .catch(error => {
+                console.error('Error loading table:', error);
+                document.getElementById('table_message').innerHTML = '<p>Error loading table data.</p>';
+            });
+          });
+      })
+      .catch(error => {
+          console.error('Error loading table:', error);
+          document.getElementById('table_message').innerHTML = '<p>Error loading table data.</p>';
+      });
+}
+
+function LoadTable2(){
+  if (!LoggedIn) {alert("Please log in to load dataset."); return;}
+    fetch('gatherTable2Data.php')
+    .then(response => response.json())
+      .then(data => {
+          drawStockPricesTable(data);
+          document.getElementById('message_div').innerHTML += '<p>Stock prices table successfully loaded.</p>';
+          document.getElementById('table_message').innerHTML = '';
+          document.getElementById("selection_div").innerHTML = "";
+          document.getElementById("selection2_div").innerHTML = "";
+          DataLoaded = false;
+          DataLoaded2 = true;
       })
       .catch(error => {
           console.error('Error loading table:', error);
@@ -211,8 +415,10 @@ function LoadTable(){
 }
 
 function BarChartRadio(){
-  if (!DataLoaded) {alert("Please load the database before interacting with the charts."); return;}
+  if (DataLoaded2) {alert("Please load the correct database before interacting with the charts."); return;}
+  if (!DataLoaded && !DataLoaded2) {alert("Please load the database before interacting with the charts."); return;}
   document.getElementById("selection_div").innerHTML = "";
+  document.getElementById("selection2_div").innerHTML = "";
   if (!document.getElementById('perTeam')) {
     const perTeamOption = document.createElement('input');
     perTeamOption.type = 'radio';
@@ -277,19 +483,115 @@ function LineChartRadio(){
     selection_div.appendChild(perYearOption);
     selection_div.appendChild(perYearLabel);
   }
+  if (!document.getElementById('correlation')) {
+    document.getElementById("selection2_div").innerHTML = "";
+    const correlationOption = document.createElement('input');
+    correlationOption.type = 'radio';
+    correlationOption.id = 'correlation';
+    correlationOption.name = 'dataOption';
+    correlationOption.value = 'correlation';
+
+    const correlationLabel = document.createElement('label');
+    correlationLabel.htmlFor = 'correlation';
+    correlationLabel.innerHTML = 'Exit Velocity vs. Distance<br><br>';
+
+    selection_div.appendChild(correlationOption);
+    selection_div.appendChild(correlationLabel);
+  }
 }
+
+function drawSlider() {
+  if (!document.getElementById('slider-range')) {
+    document.getElementById('graph_div').innerHTML += '<label for="amount">Year range:</label>';
+    document.getElementById('graph_div').innerHTML += '<input type="text" id="amount" readonly="" style="border:0; text-align: center;">';
+    document.getElementById('graph_div').innerHTML += '<br><div id="slider-range"></div>';
+    document.getElementById('graph_div').innerHTML += '<button id="submit-button">Submit</button>';
+    document.getElementById('graph_div').innerHTML += '<button id="save-button">Save Options</button>';
+
+    document.getElementById("graph_div").style.display = "flex";
+    document.getElementById("graph_div").style.flexDirection = "column";
+    document.getElementById("graph_div").style.alignItems = "center";
+    document.getElementById("graph_div").style.justifyContent = "center";
+    document.getElementById("slider-range").style.width = "300px";
+
+    $(document).ready(function() {
+      $( "#slider-range" ).slider({
+        range: true,
+        min: 2006,
+        max: 2017,
+        values: [ 2006, 2017 ],
+        slide: function( event, ui ) {
+          $( "#amount" ).val( "" + ui.values[ 0 ] + " - " + ui.values[ 1 ] );
+        }
+      });
+      $( "#amount" ).val( "" + $( "#slider-range" ).slider( "values", 0 ) + " - " + $( "#slider-range" ).slider( "values", 1 ) );
+    });
+  }
+
+  document.getElementById('submit-button').addEventListener('click', function() {
+    var minYear = $("#slider-range").slider("values", 0);
+    var maxYear = $("#slider-range").slider("values", 1);
+
+    fetch('perTeam.php', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: `min=${encodeURIComponent(minYear)}&max=${encodeURIComponent(maxYear)}`
+    })
+    .then(response => response.json())
+    .then(data => {
+      drawPerTeamTable(data);
+      setTimeout(function() {drawSlider();}, 200);
+    })
+    .catch(error => {
+      console.error('Error loading table:', error);
+      document.getElementById('table_message').innerHTML = '<p>Error loading table data.</p>';
+    });
+  });
+
+  document.getElementById('save-button').addEventListener('click', function() {
+    var minYear = $("#slider-range").slider("values", 0);
+    var maxYear = $("#slider-range").slider("values", 1);
+
+    fetch('saveOptions.php', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: `min=${encodeURIComponent(minYear)}&max=${encodeURIComponent(maxYear)}&uid=${encodeURIComponent(uid)}&login=${encodeURIComponent(ulog)}`
+    })
+    .then(response => response.json())
+    .then(data => {
+      {alert(data.message); return;}
+    })
+    .catch(error => {
+      console.error('Error saving settings:', error);
+      document.getElementById('table_message').innerHTML = '<p>Error saving settings!</p>';
+    });
+  });
+}
+
 
 $(document).on('change', '[type="radio"]', function() {
   var currentRadio = $(this).val(); // Get the radio checked value
   
   if (currentRadio == 'perTeam'){
-    fetch('perTeam.php')
+    fetch('perTeam.php', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: `uid=${encodeURIComponent(uid)}`
+    })
     .then(response => response.json())
       .then(data => {
           drawPerTeamTable(data);
           document.getElementById('message_div').innerHTML += '<p>Per Team Graph successfully loaded.</p>';
           DataLoaded = true;
+          setTimeout(function() {drawSlider();}, 200);
       })
+
       .catch(error => {
           console.error('Error loading table:', error);
           document.getElementById('graph_div').innerHTML = '<p>Error loading graph.</p>';
@@ -297,7 +599,7 @@ $(document).on('change', '[type="radio"]', function() {
   }
   else if (currentRadio == 'perPlayer'){
     if (!document.getElementById('perPlayers')) {
-      document.getElementById("selection2_div").innerHTML = "";
+    document.getElementById("selection2_div").innerHTML = "";
     const perPlayersOption = document.createElement('select');
     perPlayersOption.id = 'perPlayers';
     perPlayersOption.name = 'dataOption';
@@ -490,6 +792,20 @@ $(document).on('change', '[type="radio"]', function() {
 
     }
   }
+
+  if (currentRadio == 'correlation'){
+    fetch('correlation.php')
+    .then(response => response.json())
+      .then(data => {
+          drawCorrelationTable(data);
+          document.getElementById('message_div').innerHTML += '<p>Exit Velocity vs. Distance Graph successfully loaded.</p>';
+          DataLoaded = true;
+      })
+      .catch(error => {
+          console.error('Error loading table:', error);
+          document.getElementById('graph_div').innerHTML = '<p>Error loading graph.</p>';
+      });
+  }
   
 });
 
@@ -507,6 +823,7 @@ function LogoutDB() {
               document.getElementById("table_div").innerHTML = "";
               LoggedIn = false;
               DataLoaded = false;
+              DataLoaded2 = false;
               alert(data.message);
           } else if (data.status === 'error') { alert(data.message); }
       })
